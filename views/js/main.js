@@ -49,7 +49,7 @@ function getNames(){
         			"source": "single-point",
         			"type": "circle",
         			"paint": {
-            			"circle-radius": 10,
+            			"circle-radius": 9,
             			"circle-color": "#007cbf"
         			}
     			});
