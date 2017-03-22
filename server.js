@@ -2,7 +2,21 @@ var express = require("express");
 var app = express();
 var cfenv = require("cfenv");
 var bodyParser = require('body-parser')
+var fs = require('fs');
+var google = require('google');
+var NodeGeocoder = require('node-geocoder');
 
+//initialize geocoder service for coordinates
+var options = {
+  provider: 'google',
+
+  // Optional depending on the providers
+  httpAdapter: 'https', // Default
+  apiKey: 'AIzaSyC4hVADnTtaaiE57-ySRd5gFJAwlIDU0HI', // for Mapquest, OpenCage, Google Premier
+  formatter: null         // 'gpx', 'string', ...
+};
+
+var geocoder = NodeGeocoder(options);
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 
@@ -33,6 +47,50 @@ app.post("/api/visitors", function (request, response) {
   });
 });
 
+
+app.get("/api/map", function (request, response) {
+      var addresses = JSON.parse(fs.readFileSync('coordinates.json', 'utf8'));
+      var coordinates = {};
+      coordinates['type'] = "FeatureCollection";
+      coordinates['features'] = [];
+      var length = 0;
+      for (var i=0; i<addresses.length; i++){
+	      address = addresses[i]['Street Address']+' '+addresses[i]['City']+ ' '+ addresses[i]['Prov.']+ ' '+ addresses[i]['Postal Code'];
+	      console.log(address);
+	      geocoder.geocode( address, 
+            function(err, res) {
+              if(res[0]){
+              length++;
+	      //console.log(address);
+              //console.log(length);
+              var newFeature = {
+                  "type": "Feature",
+                  "geometry": {
+                      "type": "Point",
+                      "coordinates": [parseFloat(res[0].longitude), parseFloat(res[0].latitude)]
+                  },
+                  "properties": {
+                      "title": res[0].zipcode,
+                      "icon": "monument"
+                  }
+              }
+              coordinates['features'].push(newFeature);
+              }
+              else{
+		      //console.log(length);
+		      //console.log(address);
+		      length++;
+	      }
+              if(length==addresses.length){
+                console.log(addresses.length);
+                response.json(coordinates);
+                return;
+              }
+
+        });
+      }
+});
+
 /**
  * Endpoint to get a JSON array of all the visitors in the database
  * REST API example:
@@ -45,8 +103,9 @@ app.post("/api/visitors", function (request, response) {
  * @return An array of all the visitor names
  */
 app.get("/api/visitors", function (request, response) {
-  var names = [];
+/*  var names = [];
   if(!mydb) {
+
     response.json(names);
     return;
   }
@@ -59,7 +118,10 @@ app.get("/api/visitors", function (request, response) {
       });
       response.json(names);
     }
-  });
+  });*/
+
+  var coordinates = require("./coordinates.json");
+  response.json(coordinates);
 });
 
 
