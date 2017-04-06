@@ -5,6 +5,7 @@ var bodyParser = require('body-parser')
 var fs = require('fs');
 var google = require('google');
 var NodeGeocoder = require('node-geocoder');
+var http = require('https');
 
 //initialize geocoder service for coordinates
 var options = {
@@ -32,19 +33,54 @@ var mydb;
 * }
 */
 app.post("/api/visitors", function (request, response) {
-  var userName = request.body.name;
+  var destination = request.body.name;
   if(!mydb) {
-    console.log("No database.");
-    response.send("Hello " + userName + "!");
+    var origin = [-96, 37.8];
+    //here insert best path search IoT Context Mapping or Geospatial Services!
+    //TRIAL TRIAL TRIAL TRIAL
+    var options = {
+      "method": "GET",
+      "hostname": "api.ibm.com",
+      "port": null,
+      "path": "/mapinsights/mapservice/routesearch?"+
+      "dest_longitude="+ destination[0]+
+      "&orig_latitude="+ origin[0]+
+      "&tenant_id="+ "d2a718e1-a1d0-4682-bdda-9de831954daa"+
+      "&dest_latitude="+ destination[1]+
+      "&orig_longitude="+ origin[1],
+      "headers": {
+        "accept": "application/json",
+        "content-type": "application/json"
+      }
+    };
+    var req = http.request(options, function (res) {
+          var chunks = [];
+
+          res.on("data", function (chunk) {
+            chunks.push(chunk);
+          });
+
+          res.on("end", function () {
+            var body = Buffer.concat(chunks);
+            console.log(body.toString());
+          });
+    });
+
+    req.end();    
+    console.log(req);
+
+    response.send(destination);
+    
+    //TRIAL TRIAL TRIAL TRIAL
     return;
   }
   // insert the username as a document
-  mydb.insert({ "name" : userName }, function(err, body, header) {
+/*  mydb.insert({ "name" : userName }, function(err, body, header) {
     if (err) {
       return console.log('[mydb.insert] ', err.message);
     }
     response.send("Hello " + userName + "! I added you to the database.");
-  });
+  });*/
 });
 
 
@@ -52,8 +88,8 @@ app.get("/api/map", function (request, response) {
       var addresses = JSON.parse(fs.readFileSync('coordinates.json', 'utf8'));
       var coordinates = {};
       coordinates['type'] = "FeatureCollection";
-      coordinates['features'] = [];
-      var length = 0;
+      coordinates['features'] = []
+;      var length = 0;
       for (var i=0; i<addresses.length; i++){
 	      address = addresses[i]['Street Address']+' '+addresses[i]['City']+ ' '+ addresses[i]['Prov.']+ ' '+ addresses[i]['Postal Code'];
 	      console.log(address);

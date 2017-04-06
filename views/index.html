@@ -10,12 +10,14 @@
 </head>
 	<body>
 		<div id='map'></div>
-		<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.33.1/mapbox-gl.js'></script>
-		<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.33.1/mapbox-gl.css' rel='stylesheet' />	
+		<nav id='filter-group' class='filter-group'></nav>
+		<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.33.1/mapbox-gl.js'></script>	
+		<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.33.1/mapbox-gl.css' rel='stylesheet' />
 		<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.0.1/mapbox-gl-geocoder.js'></script>
-		<script src='/js/main.js'></script>
 		<link rel='stylesheet' href='/css/geocoder.css' type='text/css' />
 		<link rel='stylesheet' href='/css/main.css' type='text/css' />
-
+		<div id='geocoder-container'></div>
+		<script type='text/javascript' src='/js/main.js'></script>
+		
 	</body>
 </html>

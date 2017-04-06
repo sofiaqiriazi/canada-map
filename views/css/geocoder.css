@@ -7,9 +7,11 @@
      -moz-box-sizing:border-box;
           box-sizing:border-box;
   }
+
+
 .mapboxgl-ctrl-geocoder {
   font:15px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
-  position:relative;
+  position: relative;
   background-color:white;
   width:33.3333%;
   min-width:240px;

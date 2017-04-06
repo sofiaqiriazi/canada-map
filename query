@@ -1,0 +1,1 @@
+    curl --request GET --url "https://api.ibm.com/mapinsights/mapservice/routesearch?dest_longitude=-79.3849&orig_latitude=-96&tenant_id=5af8cd38-9a47-441e-bef3-0e769eb93a69&dest_latitude=43.6529&orig_longitude=37.8" --header "accept: application/json" --header "content-type: application/json"
