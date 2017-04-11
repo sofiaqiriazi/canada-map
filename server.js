@@ -88,7 +88,7 @@ app.get("/api/map", function (request, response) {
       var addresses = JSON.parse(fs.readFileSync('coordinates.json', 'utf8'));
       var coordinates = {};
       coordinates['type'] = "FeatureCollection";
-      coordinates['features'] = []
+      coordinates['features'] = [];
 ;      var length = 0;
       for (var i=0; i<addresses.length; i++){
 	      address = addresses[i]['Street Address']+' '+addresses[i]['City']+ ' '+ addresses[i]['Prov.']+ ' '+ addresses[i]['Postal Code'];

@@ -9,81 +9,47 @@ var map = new mapboxgl.Map({
 });
 
 var geocoder = new MapboxGeocoder({
-    accessToken: mapboxgl.accessToken,
-    container: 'geocoder-container'
-});
-
-map.addControl(new MapboxGeocoder({
   container: 'geocoder-container',
   accessToken: mapboxgl.accessToken      
-}));
+})
 
+map.addControl(geocoder);
 
-var coordinates = [];
-//Retreive all the coordinates from the database
-function getNames(){
-	$.get("./api/map")
-		.done(function(geojson) {
-			layer = geojson;
-			map.on('load', function () {
-/*				test = {
-					"id": "points",
-					"type": "symbol",
-					"source": {
-						"type": "geojson",
-						"data": layer
-					},
-					"layout": {
-						"icon-image": "{icon}-15",
-						"text-field": "{title}",
-						"text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-						"text-offset": [0, 0.6],
-						"text-anchor": "top"
-					}
-				}
-				map.addLayer(test);*/
-				map.addSource('single-point', {
-        			"type": "geojson",
-        			"data": {
-            		"type": "FeatureCollection",
-            		"features": []
-        			}
-    			});
-    			map.addLayer({
-        			"id": "point",
-        			"source": "single-point",
-        			"type": "circle",
-        			"paint": {
-            			"circle-radius": 9,
-            			"circle-color": "#007cbf"
-        			}
-    			});
+var singlepoint = {
+    "type": "geojson",
+    "data": {
+        "type": "FeatureCollection",
+        "features": []
+    }
+};
 
-    			geocoder.on('result', function(ev) {
-    				var local_req = ev.result.center;
-        			map.getSource('single-point').setData(ev.result.geometry);
+var point = {
+    "id": "point",
+    "source": "single-point",
+    "type": "circle",
+    "paint": {
+        "circle-radius": 9,
+        "circle-color": "#007cbf"
+    }
+};
 
-            		if (local_req.length > 0) { //catch Enter key
-            			console.log(local_req);
-            		//POST request to API to create a new visitor entry in the database
-                	$.ajax({
-				  		method: "POST",
-				  		url: "./api/visitors",
-				  		contentType: "application/json",
-				  		data: JSON.stringify({name: local_req })
-					})
-                		.done(function(data) {
-                    		$('#response').html(data);
-                    		$('#nameInput').hide();
-                    		console.log(data);
-                		});
-            		}
-    			});
+function cleanLocations(layer){
+    $('#filter-group').empty();
+    layer.features.forEach(function(feature){
+        map.removeLayer(feature.properties['title']);    
+    })
+}           
+
+//create points on map and the list of checkboxes
+function showLocations(layer){
+    if (!map.getSource("places")){
         map.addSource("places", {
             "type": "geojson",
             "data": layer
         });
-    	layer.features.forEach(function(feature) {
+    }
+
+    layer.features.forEach(function(feature) {
         var symbol = feature.properties['icon'];
         var uniqueid = feature.properties['title'];
         var layerID = uniqueid;
@@ -123,14 +89,102 @@ function getNames(){
             });
         }
     })
-			});
-		});
 }
 
+function lookUpDistances(layer, end){
+    var results = [];
+    var distances = []; 
+    
+    layer.features.forEach(function(feature){
+        var start = feature.geometry.coordinates;
+        var route  = {};
+        $.ajax({
+        url: 'https://api.mapbox.com/directions/v5/mapbox/driving/'+start+';'+end+'?access_token='+ mapboxgl.accessToken,
+        beforeSend: function(xhr) {
+             xhr.setRequestHeader("access_token", mapboxgl.accessToken)
+        }, success: function(data){
+            route['dist'] = data.routes[0].distance;
+            route['start'] = feature.properties.title;
+            distances.push(route);
+            var results = {};
+            //process the JSON data etc
+            if(distances.length == layer.features.length){
 
-function showHouses(){
+                distances.sort(function(a, b){
+                    return a.dist - b.dist;
+                });
+
+                var closest = distances.splice(0,5);
+                results['type'] = "FeatureCollection";
+                results['features'] = [];
+                closest.forEach(function(distance){
+                    var counter = 0;
+
+                    layer.features.forEach(function(feat){
+                    if(distance.start == feat.properties.title){
+                        results['features'].push(feat);
+                        if(results.features.length == 5){
+                            console.log("TRYE");
+                            console.log(results);
+                            cleanLocations(layer);
+                            showLocations(results);
+                        }
+                    }
+                    counter+=1;
+
+                })
+
+                })
+                
+
+            }
+            }
+        })
+        
+    })
+}
+
+function searchBar(layer){
+    geocoder.on('result', function(ev) {
+            initMap();
+            var local_req = ev.result.center;
+            map.getSource('single-point').setData(ev.result.geometry);
+
+            if (local_req.length > 0) { //catch Enter key
+                
+                //POST request to API to create a new visitor entry in the database
+                $.ajax({
+                        method: "POST",
+                        url: "./api/visitors",
+                        contentType: "application/json",
+                        data: JSON.stringify({name: local_req })
+                })
+                .done(function(data) {
+                        $('#response').html(data);
+                        $('#nameInput').hide();
+                        
+                        //under progress
+                        lookUpDistances(layer,data);
+                });
+            }
+    });
 
 }
-//Call getNames on page load.
+var coordinates = [];
+//Retreive all the coordinates from the database
+function initMap(){
+	$.get("./api/map").done(function(geojson) {
+			layer = geojson;
+			map.on('load', function () {
 
-getNames();
+                map.addSource('single-point',singlepoint);
+                map.addLayer(point);
+                searchBar(layer);
+                showLocations(layer);
+
+            });
+	    });
+}
+
+//call getNames on page Load
+initMap();
